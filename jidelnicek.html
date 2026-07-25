@@ -269,46 +269,9 @@
       <div class="card">
         <span class="step-eyebrow">Krok 2</span>
         <h2>Vyberte recepty</h2>
-
-        <label class="recipe-pick">
-          <input type="checkbox" class="recipe-cb" value="Hovězí se sladkými bramborami (89 Kč/den)" checked>
-          <span class="ri-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 21c-4-3-9-7-9-12a5 5 0 019-3 5 5 0 019 3c0 5-5 9-9 12z" fill="#F6F1E3"/></svg></span>
-          <span class="ri-text">
-            <h3>Hovězí se sladkými bramborami</h3>
-            <p>Libové hovězí, sladké brambory, mrkev, lněný olej.</p>
-          </span>
-          <span class="ri-price mono">89 Kč/den</span>
-        </label>
-
-        <label class="recipe-pick">
-          <input type="checkbox" class="recipe-cb" value="Kuřecí s dýní a hráškem (79 Kč/den)">
-          <span class="ri-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 21c-4-3-9-7-9-12a5 5 0 019-3 5 5 0 019 3c0 5-5 9-9 12z" fill="#F6F1E3"/></svg></span>
-          <span class="ri-text">
-            <h3>Kuřecí s dýní a hráškem</h3>
-            <p>Jemné kuřecí prsa, dýně, hrášek — pro citlivější žaludky.</p>
-          </span>
-          <span class="ri-price mono">79 Kč/den</span>
-        </label>
-
-        <label class="recipe-pick">
-          <input type="checkbox" class="recipe-cb" value="Losos s quinoou (99 Kč/den)">
-          <span class="ri-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 21c-4-3-9-7-9-12a5 5 0 019-3 5 5 0 019 3c0 5-5 9-9 12z" fill="#F6F1E3"/></svg></span>
-          <span class="ri-text">
-            <h3>Losos s quinoou</h3>
-            <p>Norský losos, quinoa, špenát. Vysoký obsah omega-3.</p>
-          </span>
-          <span class="ri-price mono">99 Kč/den</span>
-        </label>
-
-        <label class="recipe-pick">
-          <input type="checkbox" class="recipe-cb" value="Krůtí s brokolicí (85 Kč/den)">
-          <span class="ri-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 21c-4-3-9-7-9-12a5 5 0 019-3 5 5 0 019 3c0 5-5 9-9 12z" fill="#F6F1E3"/></svg></span>
-          <span class="ri-text">
-            <h3>Krůtí s brokolicí</h3>
-            <p>Libové krůtí maso, brokolice, hnědá rýže.</p>
-          </span>
-          <span class="ri-price mono">85 Kč/den</span>
-        </label>
+        <div id="recipePickList">
+          <p class="mono" style="color:rgba(246,241,227,0.5)">Načítáme recepty…</p>
+        </div>
       </div>
 
       <div class="card">
@@ -391,6 +354,33 @@
     };
   }
 
+  async function loadRecipes(){
+    const list = document.getElementById('recipePickList');
+    try{
+      const res = await fetch('/api/recipes');
+      if(!res.ok) throw new Error('request failed');
+      const recipes = await res.json();
+      if(!recipes.length){
+        list.innerHTML = '<p class="mono" style="color:rgba(246,241,227,0.5)">Momentálně nejsou k dispozici žádné recepty.</p>';
+        return;
+      }
+      list.innerHTML = recipes.map((r, i) => `
+        <label class="recipe-pick">
+          <input type="checkbox" class="recipe-cb" value="${r.name} (${r.price} Kč/den)" ${i === 0 ? 'checked' : ''}>
+          <span class="ri-icon"><svg viewBox="0 0 24 24" fill="none"><path d="M12 21c-4-3-9-7-9-12a5 5 0 019-3 5 5 0 019 3c0 5-5 9-9 12z" fill="#F6F1E3"/></svg></span>
+          <span class="ri-text">
+            <h3>${r.name}</h3>
+            <p>${r.description}</p>
+          </span>
+          <span class="ri-price mono">${r.price} Kč/den</span>
+        </label>
+      `).join('');
+      updateSummary();
+    }catch(err){
+      list.innerHTML = '<p class="mono" style="color:rgba(246,241,227,0.5)">Recepty se nepodařilo načíst. Zkuste stránku obnovit.</p>';
+    }
+  }
+
   function updateSummary(){
     const s = currentSelections();
     $('sumDog').textContent = s.dogName || '—';
@@ -415,7 +405,7 @@
   }
 
   document.getElementById('builderForm').addEventListener('input', updateSummary);
-  updateSummary();
+  loadRecipes();
 
   $('sendBtn').addEventListener('click', () => {
     const s = currentSelections();

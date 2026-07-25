@@ -595,76 +595,44 @@
       <h2>Jídelníček tohoto týdne</h2>
       <p>Čtyři recepty, které se střídají podle sezóny. Každá dávka se vaří max. pár dní před rozvozem.</p>
     </div>
-    <div class="recipe-grid">
-
-      <div class="recipe-card">
-        <div class="recipe-top">
-          <div class="recipe-icon">
-            <svg viewBox="0 0 24 24" fill="none"><path d="M12 21c-4-3-9-7-9-12a5 5 0 019-3 5 5 0 019 3c0 5-5 9-9 12z" fill="#F6F1E3"/></svg>
-          </div>
-          <div class="recipe-price mono">89 Kč<span>/ den · 15kg pes</span></div>
-        </div>
-        <h3>Hovězí se sladkými bramborami</h3>
-        <p class="desc">Libové hovězí, sladké brambory, mrkev a lněný olej pro srst, která se leskne.</p>
-        <div class="tags">
-          <span class="tag">62 % maso</span>
-          <span class="tag">bez obilí</span>
-          <span class="tag">omega-3</span>
-        </div>
-      </div>
-
-      <div class="recipe-card">
-        <div class="recipe-top">
-          <div class="recipe-icon">
-            <svg viewBox="0 0 24 24" fill="none"><path d="M12 21c-4-3-9-7-9-12a5 5 0 019-3 5 5 0 019 3c0 5-5 9-9 12z" fill="#F6F1E3"/></svg>
-          </div>
-          <div class="recipe-price mono">79 Kč<span>/ den · 15kg pes</span></div>
-        </div>
-        <h3>Kuřecí s dýní a hráškem</h3>
-        <p class="desc">Jemné kuřecí prsa, dýně na vlákninu a hrášek — ideální pro citlivější žaludky.</p>
-        <div class="tags">
-          <span class="tag">58 % maso</span>
-          <span class="tag">lehce stravitelné</span>
-          <span class="tag">bez mléka</span>
-        </div>
-      </div>
-
-      <div class="recipe-card">
-        <div class="recipe-top">
-          <div class="recipe-icon">
-            <svg viewBox="0 0 24 24" fill="none"><path d="M12 21c-4-3-9-7-9-12a5 5 0 019-3 5 5 0 019 3c0 5-5 9-9 12z" fill="#F6F1E3"/></svg>
-          </div>
-          <div class="recipe-price mono">99 Kč<span>/ den · 15kg pes</span></div>
-        </div>
-        <h3>Losos s quinoou</h3>
-        <p class="desc">Norský losos, quinoa a špenát. Vysoký obsah omega-3 pro klouby a srst.</p>
-        <div class="tags">
-          <span class="tag">55 % ryba</span>
-          <span class="tag">bez kuřete</span>
-          <span class="tag">pro alergiky</span>
-        </div>
-      </div>
-
-      <div class="recipe-card">
-        <div class="recipe-top">
-          <div class="recipe-icon">
-            <svg viewBox="0 0 24 24" fill="none"><path d="M12 21c-4-3-9-7-9-12a5 5 0 019-3 5 5 0 019 3c0 5-5 9-9 12z" fill="#F6F1E3"/></svg>
-          </div>
-          <div class="recipe-price mono">85 Kč<span>/ den · 15kg pes</span></div>
-        </div>
-        <h3>Krůtí s brokolicí</h3>
-        <p class="desc">Libové krůtí maso, brokolice a hnědá rýže. Vyvážené jídlo pro klidné dny doma.</p>
-        <div class="tags">
-          <span class="tag">60 % maso</span>
-          <span class="tag">nízký obsah tuku</span>
-          <span class="tag">pro seniory</span>
-        </div>
-      </div>
-
+    <div class="recipe-grid" id="recipeGrid">
+      <p class="mono" style="color:rgba(35,43,34,0.5)">Načítáme jídelníček…</p>
     </div>
   </div>
 </section>
 
+<script>
+  async function loadRecipes(){
+    const grid = document.getElementById('recipeGrid');
+    try{
+      const res = await fetch('/api/recipes');
+      if(!res.ok) throw new Error('request failed');
+      const recipes = await res.json();
+      if(!recipes.length){
+        grid.innerHTML = '<p class="mono" style="color:rgba(35,43,34,0.5)">Jídelníček se právě aktualizuje, zkuste to prosím za chvíli.</p>';
+        return;
+      }
+      grid.innerHTML = recipes.map(r => `
+        <div class="recipe-card">
+          <div class="recipe-top">
+            <div class="recipe-icon">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M12 21c-4-3-9-7-9-12a5 5 0 019-3 5 5 0 019 3c0 5-5 9-9 12z" fill="#F6F1E3"/></svg>
+            </div>
+            <div class="recipe-price mono">${r.price} Kč<span>/ den · 15kg pes</span></div>
+          </div>
+          <h3>${r.name}</h3>
+          <p class="desc">${r.description}</p>
+          <div class="tags">
+            ${(r.tags || []).map(t => `<span class="tag">${t}</span>`).join('')}
+          </div>
+        </div>
+      `).join('');
+    }catch(err){
+      grid.innerHTML = '<p class="mono" style="color:rgba(35,43,34,0.5)">Jídelníček se teď nepodařilo načíst. Zkuste stránku obnovit.</p>';
+    }
+  }
+  loadRecipes();
+</script>
 <section class="how" id="jak">
   <div class="wrap">
     <h2>Jak se WOOF dostane k misce</h2>

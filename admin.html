@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Administrace — WOOF</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,900&family=Work+Sans:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper: #EFE8D8;
+    --paper-card: #E4DBC4;
+    --ink: #232B22;
+    --pine: #2F4A3C;
+    --pine-dark: #223429;
+    --marigold: #E3A73B;
+    --brick: #A8402B;
+    --cream: #F6F1E3;
+    --line: rgba(35,43,34,0.15);
+    --danger: #A8402B;
+    --ok: #4C7A55;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; background: var(--paper); color: var(--ink);
+    font-family: 'Work Sans', sans-serif; font-size:16px; line-height:1.5;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1,h2,h3{ font-family:'Fraunces', serif; font-weight:600; margin:0; color: var(--pine-dark); }
+  .mono{ font-family:'Space Mono', monospace; }
+  :focus-visible{ outline: 3px solid var(--brick); outline-offset: 2px; }
+  .wrap{ max-width: 980px; margin: 0 auto; padding: 0 28px; }
+
+  header{ background: var(--pine-dark); color: var(--cream); padding: 20px 0; }
+  .header-row{ display:flex; align-items:center; justify-content:space-between; }
+  .logo{ display:flex; align-items:center; gap:10px; font-family:'Fraunces',serif; font-weight:900; font-size:1.3rem; text-decoration:none; color:var(--cream); }
+  .logo svg{ width:28px; height:28px; }
+  .logout-btn{
+    background: transparent; border: 1.5px solid rgba(246,241,227,0.4); color: var(--cream);
+    padding: 8px 16px; border-radius: 999px; font-size: 0.85rem; cursor:pointer; font-family:'Work Sans',sans-serif;
+  }
+  .logout-btn:hover{ border-color: var(--cream); }
+
+  /* ===== LOGIN ===== */
+  #loginScreen{
+    min-height: 100vh; display:flex; align-items:center; justify-content:center; padding: 24px;
+  }
+  .login-card{
+    background: var(--paper-card); border:1px solid var(--line); border-radius: 20px;
+    padding: 40px; max-width: 380px; width:100%; text-align:center;
+  }
+  .login-card h1{ font-size: 1.6rem; margin-bottom: 8px; }
+  .login-card p{ color: rgba(35,43,34,0.65); font-size:0.9rem; margin-bottom: 22px; }
+  .login-card input{
+    width:100%; padding: 13px 16px; border-radius: 10px; border:1.5px solid var(--line);
+    background: var(--cream); font-size: 1rem; margin-bottom: 14px;
+  }
+  .login-card input:focus{ outline:2px solid var(--marigold); border-color:transparent; }
+  #loginError{ color: var(--danger); font-size: 0.85rem; min-height: 18px; margin-bottom: 8px; }
+
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    background: var(--pine-dark); color: var(--cream); border:none;
+    padding: 13px 22px; border-radius: 999px; font-weight:600; font-size:0.95rem;
+    cursor:pointer; font-family:'Work Sans',sans-serif; width:100%;
+    transition: background .2s ease;
+  }
+  .btn:hover{ background: var(--brick); }
+  .btn.small{ width:auto; padding: 9px 16px; font-size: 0.85rem; }
+  .btn.outline{ background: transparent; color: var(--pine-dark); border: 1.5px solid var(--pine-dark); }
+  .btn.outline:hover{ background: var(--pine-dark); color: var(--cream); }
+  .btn.danger{ background: transparent; color: var(--danger); border: 1.5px solid var(--danger); }
+  .btn.danger:hover{ background: var(--danger); color: var(--cream); }
+
+  /* ===== APP ===== */
+  #app{ display:none; }
+  .toolbar{ padding: 34px 0 10px; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:14px; }
+  .toolbar p{ color: rgba(35,43,34,0.6); font-size: 0.9rem; margin-top:4px; }
+
+  #status{ position: fixed; top: 18px; right: 18px; z-index: 50; }
+  .toast{
+    background: var(--pine-dark); color: var(--cream); padding: 12px 18px; border-radius: 12px;
+    font-size: 0.88rem; box-shadow: 0 10px 24px rgba(0,0,0,0.2); margin-bottom: 8px;
+  }
+  .toast.error{ background: var(--danger); }
+
+  .recipe-list{ padding: 20px 0 80px; display:flex; flex-direction:column; gap: 16px; }
+  .recipe-row{
+    background: var(--paper-card); border:1px solid var(--line); border-radius: 16px; padding: 22px 24px;
+  }
+  .recipe-row.inactive{ opacity: 0.55; }
+  .row-head{ display:flex; align-items:flex-start; justify-content:space-between; gap: 16px; }
+  .row-head h3{ font-size: 1.2rem; }
+  .row-meta{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:4px; }
+  .price-badge{ font-family:'Space Mono',monospace; font-size:0.82rem; color: var(--brick); font-weight:700; }
+  .status-pill{
+    font-family:'Space Mono',monospace; font-size:0.7rem; text-transform:uppercase; letter-spacing:0.05em;
+    padding: 3px 10px; border-radius:999px; background: var(--ok); color: var(--cream);
+  }
+  .status-pill.off{ background: rgba(35,43,34,0.35); }
+  .row-actions{ display:flex; gap:8px; flex-shrink:0; }
+  .row-desc{ margin-top:10px; color: rgba(35,43,34,0.75); font-size:0.92rem; }
+  .row-tags{ display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+  .tag{ font-family:'Space Mono',monospace; font-size:0.7rem; padding:5px 10px; border-radius:999px; background:var(--paper); border:1px solid var(--line); }
+
+  /* edit form (inline + add-new) */
+  .edit-form{ margin-top:16px; padding-top:16px; border-top:1px dashed var(--line); display:none; }
+  .edit-form.open{ display:block; }
+  .field-row{ display:grid; grid-template-columns: 1fr 1fr; gap:14px; }
+  .field{ display:flex; flex-direction:column; gap:6px; margin-top:12px; }
+  .field.full{ grid-column: 1/-1; }
+  .field label{ font-size:0.8rem; font-weight:600; color:var(--pine-dark); }
+  .field input, .field textarea{
+    padding: 10px 12px; border-radius:8px; border:1.5px solid var(--line); background: var(--cream); font-size:0.92rem; font-family:'Work Sans',sans-serif;
+  }
+  .field textarea{ min-height:60px; resize:vertical; }
+  .field input:focus, .field textarea:focus{ outline:2px solid var(--marigold); border-color:transparent; }
+  .form-actions{ display:flex; gap:10px; margin-top:16px; flex-wrap:wrap; }
+  .checkbox-field{ display:flex; align-items:center; gap:8px; margin-top:14px; }
+  .checkbox-field input{ width:18px; height:18px; accent-color:var(--brick); }
+
+  .add-card{ background: var(--pine-dark); color:var(--cream); border-radius:16px; padding:24px; }
+  .add-card h2{ color:var(--cream); font-size:1.2rem; }
+  .add-card .field label{ color: var(--cream); }
+  .add-card .field input, .add-card .field textarea{ background: rgba(246,241,227,0.08); border-color: rgba(246,241,227,0.25); color:var(--cream); }
+  .add-card .field input::placeholder, .add-card .field textarea::placeholder{ color: rgba(246,241,227,0.4); }
+
+  @media (max-width: 640px){
+    .field-row{ grid-template-columns:1fr; }
+    .row-head{ flex-direction:column; }
+    .row-actions{ width:100%; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN ===== -->
+<div id="loginScreen">
+  <div class="login-card">
+    <h1>Administrace WOOF</h1>
+    <p>Zadejte administrátorské heslo pro přístup ke správě jídelníčku.</p>
+    <input type="password" id="passwordInput" placeholder="Heslo" autocomplete="current-password">
+    <div id="loginError"></div>
+    <button class="btn" id="loginBtn">Přihlásit se</button>
+  </div>
+</div>
+
+<!-- ===== APP ===== -->
+<div id="app">
+  <header>
+    <div class="wrap header-row">
+      <a href="index.html" class="logo">
+        <svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" style="color:#F6F1E3">
+          <ellipse cx="10.5" cy="17" rx="6.5" ry="10" transform="rotate(-25 10.5 17)" fill="currentColor"/>
+          <circle cx="20" cy="19" r="12" fill="currentColor"/>
+          <ellipse cx="29.5" cy="22.5" rx="7.5" ry="5.5" fill="currentColor"/>
+          <circle cx="17" cy="16" r="1.7" fill="#223429"/>
+          <circle cx="34.5" cy="22.5" r="1.5" fill="#223429"/>
+        </svg>
+        WOOF · Admin
+      </a>
+      <button class="logout-btn" id="logoutBtn">Odhlásit se</button>
+    </div>
+  </header>
+
+  <div class="wrap">
+    <div class="toolbar">
+      <div>
+        <h2>Recepty</h2>
+        <p>Změny se hned projeví na hlavní stránce a v jídelníčku pro zákazníky.</p>
+      </div>
+      <button class="btn small" id="showAddBtn">+ Přidat recept</button>
+    </div>
+
+    <div class="add-card" id="addCard" style="display:none; margin-top:16px;">
+      <h2>Nový recept</h2>
+      <div class="field-row">
+        <div class="field"><label>Název</label><input type="text" id="newName" placeholder="např. Krůtí s brokolicí"></div>
+        <div class="field"><label>Cena (Kč / den)</label><input type="number" id="newPrice" placeholder="85"></div>
+        <div class="field full"><label>Popis</label><textarea id="newDesc" placeholder="Krátký popis receptu…"></textarea></div>
+        <div class="field full"><label>Štítky (oddělené čárkou)</label><input type="text" id="newTags" placeholder="60 % maso, bez obilí, pro seniory"></div>
+      </div>
+      <div class="checkbox-field">
+        <input type="checkbox" id="newActive" checked>
+        <label for="newActive">Zobrazit na webu</label>
+      </div>
+      <div class="form-actions">
+        <button class="btn small" id="saveNewBtn">Uložit recept</button>
+        <button class="btn small outline" id="cancelNewBtn">Zrušit</button>
+      </div>
+    </div>
+
+    <div class="recipe-list" id="recipeList">
+      <p class="mono" style="color:rgba(35,43,34,0.5)">Načítám recepty…</p>
+    </div>
+  </div>
+</div>
+
+<div id="status"></div>
+
+<script>
+  const API_RECIPES = '/api/admin/recipes';
+  let adminKey = sessionStorage.getItem('woofAdminKey') || '';
+  let recipesCache = [];
+
+  const loginScreen = document.getElementById('loginScreen');
+  const app = document.getElementById('app');
+  const loginError = document.getElementById('loginError');
+
+  function toast(msg, isError){
+    const box = document.getElementById('status');
+    const el = document.createElement('div');
+    el.className = 'toast' + (isError ? ' error' : '');
+    el.textContent = msg;
+    box.appendChild(el);
+    setTimeout(() => el.remove(), 3500);
+  }
+
+  function showApp(){
+    loginScreen.style.display = 'none';
+    app.style.display = 'block';
+    fetchRecipes();
+  }
+
+  async function tryLogin(password){
+    loginError.textContent = '';
+    try{
+      const res = await fetch(API_RECIPES, { headers: { 'x-admin-key': password } });
+      if(res.ok){
+        adminKey = password;
+        sessionStorage.setItem('woofAdminKey', password);
+        showApp();
+      } else {
+        loginError.textContent = 'Nesprávné heslo.';
+      }
+    }catch(err){
+      loginError.textContent = 'Nepodařilo se spojit se serverem.';
+    }
+  }
+
+  document.getElementById('loginBtn').addEventListener('click', () => {
+    tryLogin(document.getElementById('passwordInput').value);
+  });
+  document.getElementById('passwordInput').addEventListener('keydown', (e) => {
+    if(e.key === 'Enter') tryLogin(e.target.value);
+  });
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    sessionStorage.removeItem('woofAdminKey');
+    location.reload();
+  });
+
+  if(adminKey){ tryLogin(adminKey); }
+
+  async function fetchRecipes(){
+    const list = document.getElementById('recipeList');
+    try{
+      const res = await fetch(API_RECIPES, { headers: { 'x-admin-key': adminKey } });
+      if(!res.ok) throw new Error('unauthorized');
+      recipesCache = await res.json();
+      renderList();
+    }catch(err){
+      list.innerHTML = '<p class="mono" style="color:rgba(35,43,34,0.5)">Recepty se nepodařilo načíst.</p>';
+    }
+  }
+
+  function renderList(){
+    const list = document.getElementById('recipeList');
+    if(!recipesCache.length){
+      list.innerHTML = '<p class="mono" style="color:rgba(35,43,34,0.5)">Zatím žádné recepty. Přidejte první výše.</p>';
+      return;
+    }
+    list.innerHTML = recipesCache.map(r => `
+      <div class="recipe-row ${r.active ? '' : 'inactive'}" data-id="${r.id}">
+        <div class="row-head">
+          <div>
+            <h3>${escapeHtml(r.name)}</h3>
+            <div class="row-meta">
+              <span class="price-badge">${r.price} Kč / den</span>
+              <span class="status-pill ${r.active ? '' : 'off'}">${r.active ? 'Na webu' : 'Skryto'}</span>
+            </div>
+          </div>
+          <div class="row-actions">
+            <button class="btn small outline" data-action="edit" data-id="${r.id}">Upravit</button>
+            <button class="btn small danger" data-action="delete" data-id="${r.id}">Smazat</button>
+          </div>
+        </div>
+        <p class="row-desc">${escapeHtml(r.description)}</p>
+        <div class="row-tags">${(r.tags||[]).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('')}</div>
+
+        <div class="edit-form" id="edit-${r.id}">
+          <div class="field-row">
+            <div class="field"><label>Název</label><input type="text" class="e-name" value="${escapeHtml(r.name)}"></div>
+            <div class="field"><label>Cena (Kč / den)</label><input type="number" class="e-price" value="${r.price}"></div>
+            <div class="field full"><label>Popis</label><textarea class="e-desc">${escapeHtml(r.description)}</textarea></div>
+            <div class="field full"><label>Štítky (oddělené čárkou)</label><input type="text" class="e-tags" value="${(r.tags||[]).join(', ')}"></div>
+          </div>
+          <div class="checkbox-field">
+            <input type="checkbox" class="e-active" ${r.active ? 'checked' : ''} id="active-${r.id}">
+            <label for="active-${r.id}">Zobrazit na webu</label>
+          </div>
+          <div class="form-actions">
+            <button class="btn small" data-action="save" data-id="${r.id}">Uložit změny</button>
+            <button class="btn small outline" data-action="cancel" data-id="${r.id}">Zavřít</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function escapeHtml(str){
+    const d = document.createElement('div');
+    d.textContent = str || '';
+    return d.innerHTML;
+  }
+
+  document.getElementById('recipeList').addEventListener('click', async (e) => {
+    const btn = e.target.closest('button[data-action]');
+    if(!btn) return;
+    const id = btn.dataset.id;
+    const action = btn.dataset.action;
+    const formEl = document.getElementById('edit-' + id);
+
+    if(action === 'edit'){
+      formEl.classList.toggle('open');
+    }
+    if(action === 'cancel'){
+      formEl.classList.remove('open');
+    }
+    if(action === 'save'){
+      const name = formEl.querySelector('.e-name').value.trim();
+      const price = parseInt(formEl.querySelector('.e-price').value, 10) || 0;
+      const description = formEl.querySelector('.e-desc').value.trim();
+      const tags = formEl.querySelector('.e-tags').value.split(',').map(t => t.trim()).filter(Boolean);
+      const active = formEl.querySelector('.e-active').checked;
+      try{
+        const res = await fetch(API_RECIPES + '/' + id, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+          body: JSON.stringify({ name, price, description, tags, active })
+        });
+        if(!res.ok) throw new Error();
+        toast('Recept uložen.');
+        fetchRecipes();
+      }catch(err){ toast('Uložení se nepovedlo.', true); }
+    }
+    if(action === 'delete'){
+      if(!confirm('Opravdu chcete tento recept trvale smazat?')) return;
+      try{
+        const res = await fetch(API_RECIPES + '/' + id, {
+          method: 'DELETE',
+          headers: { 'x-admin-key': adminKey }
+        });
+        if(!res.ok) throw new Error();
+        toast('Recept smazán.');
+        fetchRecipes();
+      }catch(err){ toast('Smazání se nepovedlo.', true); }
+    }
+  });
+
+  document.getElementById('showAddBtn').addEventListener('click', () => {
+    document.getElementById('addCard').style.display = 'block';
+  });
+  document.getElementById('cancelNewBtn').addEventListener('click', () => {
+    document.getElementById('addCard').style.display = 'none';
+  });
+  document.getElementById('saveNewBtn').addEventListener('click', async () => {
+    const name = document.getElementById('newName').value.trim();
+    const price = parseInt(document.getElementById('newPrice').value, 10) || 0;
+    const description = document.getElementById('newDesc').value.trim();
+    const tags = document.getElementById('newTags').value.split(',').map(t => t.trim()).filter(Boolean);
+    const active = document.getElementById('newActive').checked;
+
+    if(!name){ toast('Zadejte prosím název receptu.', true); return; }
+
+    try{
+      const res = await fetch(API_RECIPES, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': adminKey },
+        body: JSON.stringify({ name, price, description, tags, active, sort_order: recipesCache.length })
+      });
+      if(!res.ok) throw new Error();
+      toast('Recept přidán.');
+      document.getElementById('newName').value = '';
+      document.getElementById('newPrice').value = '';
+      document.getElementById('newDesc').value = '';
+      document.getElementById('newTags').value = '';
+      document.getElementById('addCard').style.display = 'none';
+      fetchRecipes();
+    }catch(err){ toast('Přidání se nepovedlo.', true); }
+  });
+</script>
+
+</body>
+</html>
